@@ -34,7 +34,7 @@ with open('words.txt', 'r') as f:
 results = []
 for w in words:
   api = context.ReversoContextAPI(
-    w,
+    w.strip(),
     "",
     "ru",
     "en")
