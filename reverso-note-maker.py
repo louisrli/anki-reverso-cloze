@@ -3,6 +3,7 @@
 
 from reverso_api import context
 from itertools import islice
+import time
 import csv
 
 MAX_EXAMPLES = 3
@@ -41,6 +42,7 @@ for w in words:
   clozes = []
   hints = []
   for source, target in islice(api.get_examples(), 0, MAX_EXAMPLES):
+    time.sleep(1)
     # Create the cloze part
     cloze = make_cloze(source.text, source.highlighted)
     clozes.append(cloze)
