@@ -39,17 +39,20 @@ for w in words:
     "",
     "ru",
     "en")
+  time.sleep(1)
   clozes = []
   hints = []
   for source, target in islice(api.get_examples(), 0, MAX_EXAMPLES):
-    time.sleep(1)
     # Create the cloze part
     cloze = make_cloze(source.text, source.highlighted)
     clozes.append(cloze)
 
     # Use the english translation in a list of hints. The hint won't be
     # colocated with the sentence but doesn't really matter.
-    hints.append(get_highlighted(target.text, target.highlighted))
+    try:
+      hints.append(get_highlighted(target.text, target.highlighted))
+    except:
+      print('Hint failed on ' + w)
 
   # Columns: Term, cloze, hint
   if len(clozes) != 0:
