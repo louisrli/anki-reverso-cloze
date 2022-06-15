@@ -6,7 +6,16 @@ from itertools import islice
 import time
 import csv
 
+# Change these constants if needed.
+
+# Maximum number of examples to pull from Reverso.
 MAX_EXAMPLES = 3
+
+# Path to output file.
+OUTPUT_PATH = 'reverso.csv'
+
+INPUT_LANG = 'ru'
+OUTPUT_LANG = 'en'
 
 def get_highlighted(text, highlighted):
   """Given `highlighted`, which is a list of pair of indexes, return the first
@@ -39,6 +48,7 @@ for w in words:
     "",
     "ru",
     "en")
+  # Rate limit to prevent getting blocked by Reverso.
   time.sleep(1)
   clozes = []
   hints = []
@@ -61,7 +71,7 @@ for w in words:
     # Simply skip the word for now, oh well.
     print("Nothing found on Reverso: " + w)
 
-with open('reverso.csv', 'w', newline='') as csvfile:
+with open(OUTPUT_PATH, 'w', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
     for row in results:
       reversowriter.writerow(row)

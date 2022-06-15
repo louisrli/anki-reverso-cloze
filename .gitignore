@@ -1,3 +1,4 @@
 *.swp
 words.txt
 reverso.csv
+.DS_Store
