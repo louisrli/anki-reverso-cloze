@@ -9,7 +9,7 @@ notes with three columns:
 
 1. Term
 2. Example sentences from Reverso, with cloze
-3. Hint (the English translation).
+3. Hint (the translation of Term)
 
 This README assumes basic background knowledge of Anki cards and does not
 explain any of the related terminology.
@@ -17,7 +17,8 @@ explain any of the related terminology.
 ## Examples
 
 Here is an example of a line from the raw CSV created by the script, pulling
-three example sentences for the Russian word `толще`:
+three example sentences for the Russian word `толще` with the target term
+contained in a cloze:
 
 ```
 толще,"Нужно нарезать груши {{c1::толще}} чем яблоки, потому что они готовятся быстрее.
@@ -31,8 +32,10 @@ three example sentences for the Russian word `толще`:
 After creating a note type and importing the CSV, you'll get cards that have the
 following respective front and back sides:
 
+### Front
 ![Front of card](assets/front.png)
 
+### Back
 ![Back of card](assets/back.png)
 
 ## Usage
