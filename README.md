@@ -28,6 +28,13 @@ three example sentences for the Russian word `толще`:
 ростом.",thicker | thicker | fatter
 ```
 
+After creating a note type and importing the CSV, you'll get cards that have the
+following respective front and back sides:
+
+![Front of card](assets/front.png)
+
+![Back of card](assets/back.png)
+
 ## Usage
 Using this assumes some basic knowledge of coding.
 
@@ -47,5 +54,3 @@ prevent flooding the Reverso API.
 
 ![Example of importing](assets/import.png)
 
-
-Afterwards, in `reverso.csv`, you'll find 
