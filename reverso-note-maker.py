@@ -43,8 +43,14 @@ with open('words.txt', 'r') as f:
 
 results = []
 for w in words:
+  # We need to normalize because of this article:
+  # https://www.ojisanseiuchi.com/2021/05/08/encoding-of-the-cyrillic-letter-%D0%B9-a-utf-8-gotcha/
+  # It doesn't handle the character й well, treating it as и + diacritic in a
+  # lot of cases.
+  normalized = w.strip().lower().replace(u"\u0438\u0306", u"\u0439")
+  print(normalized)
   api = context.ReversoContextAPI(
-    w.strip(),
+    normalized,
     "",
     "ru",
     "en")
