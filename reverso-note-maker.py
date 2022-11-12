@@ -15,6 +15,7 @@ from reverso_api import context
 from itertools import islice
 import time
 import progress.bar
+import requests.exceptions
 from collections import namedtuple
 import csv
 import logging
@@ -23,10 +24,15 @@ logger = logging.getLogger(__name__)
 
 # Maximum number of examples to pull from Reverso.
 MAX_EXAMPLES = 3
+
+# Maximum number of frequencies ("translations" in library) to fetch.
 MAX_FREQUENCIES = 5
+
+MAX_RETRIES = 5
 
 # Wait this long between each request to prevent getting blocked by reverso.
 SLEEP_THROTTLE_SEC = 1
+RETRY_WAIT_SEC = 60
 
 parser = OptionParser()
 parser.add_option("-s", "--sourcelang", dest="source_lang",
@@ -115,13 +121,26 @@ for q in queries:
 
     note = AnkiReversoNote(query=q, hints=[], cloze_texts=[], frequencies=[])
 
+    num_retries = 0
+    while num_retries < MAX_RETRIES:
+        try:
+            if num_retries == MAX_RETRIES:
+                raise Exception("Hit max number of retries.")
+            translations = islice(api.get_translations(), 0, MAX_FREQUENCIES)
+            examples = islice(api.get_examples(), 0, MAX_EXAMPLES)
+            num_retries += 1
+            break
+        except requests.exceptions.ConnectionError:
+            logger.warning("Encountered a connection error. Retrying...")
+            time.sleep(RETRY_WAIT_SEC)
+
     # Handle frequencies.
-    for translation in islice(api.get_translations(), 0, MAX_FREQUENCIES):
+    for translation in translations:
         note.frequencies.append((translation.translation,
             translation.frequency))
 
     # Handle examples.
-    for source, target in islice(api.get_examples(), 0, MAX_EXAMPLES):
+    for source, target in examples:
         # Create the cloze part
         cloze = make_cloze(source.text, source.highlighted)
         note.cloze_texts.append(cloze)
