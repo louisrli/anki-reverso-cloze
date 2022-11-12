@@ -41,19 +41,20 @@ following respective front and back sides:
 ## Usage
 Using this assumes some basic knowledge of coding.
 
-In general, the only thing that will most likely need to be changed is the
-`INPUT_LANG` and `OUTPUT_LANG` variables, though there are other documented
-variables at the top of the script. 
-
-Note: due to rate limiting, the script sleeps for 1 second between each word to
-prevent flooding the Reverso API.
-
+Install the prerequisites: 
+```
+pip3 install progress
+```
 ### Steps
-1. Create a file called `words.txt` with one term per line.
-2. Run `python reverso-note-maker.py` and wait for it to finish.
+1. Create a file called `queries.txt` with one term per line.
+2. Run `python reverso-note-maker.py -s it` where `ru` (Italian) can be replaced
+   by the two letter code. Wait for it to finish.
 3. Import the created file `reverso.csv` into the Anki desktop app, with the
    columns matching in the order shown below. You will have to create a new note
    type.
+
+Note: due to rate limiting, the script sleeps for 1 second between each word to
+prevent flooding the Reverso API.
 
 ![Example of importing](assets/import.png)
 

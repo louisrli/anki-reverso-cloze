@@ -14,6 +14,7 @@ from optparse import OptionParser
 from reverso_api import context
 from itertools import islice
 import time
+import progress.bar
 from collections import namedtuple
 import csv
 import logging
@@ -94,7 +95,9 @@ with open(options.query_file, 'r') as f:
     queries = f.read().strip().split('\n')
 
 results = []
+bar = progress.bar.Bar('Processing', max=len(queries))
 for q in queries:
+    bar.next()
     # We need to normalize because of this article:
     # https://www.ojisanseiuchi.com/2021/05/08/encoding-of-the-cyrillic-letter-%D0%B9-a-utf-8-gotcha/
     # It doesn't handle the character й well, treating it as и + diacritic in a
@@ -136,6 +139,8 @@ for q in queries:
     else:
         # Simply skip the word for now, oh well.
         logger.warning("Nothing found on Reverso: " + q)
+
+bar.finish()
 
 
 as_columns = reverso_note_to_csv(results)
