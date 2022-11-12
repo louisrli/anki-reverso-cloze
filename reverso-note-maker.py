@@ -21,6 +21,7 @@ import csv
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Maximum number of examples to pull from Reverso.
 MAX_EXAMPLES = 3
@@ -79,91 +80,100 @@ AnkiReversoNote = namedtuple(
      "frequencies"))
 
 
-def reverso_note_to_csv(notes):
+def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
     """
-    Processes AnkiReversoNotes into an array of array of strings that can easily
-    be written to CSV.
+    Processes AnkiReversoNotes into a row of a CSV.
     """
-    results = []
-    for note in notes:
-        # Format: foo (123)
-        freq_strs = ["%s (%d)" % (f[0], f[1]) for f in note.frequencies]
-        results.append([note.query, '\n\n'.join(note.cloze_texts),
-                        ' | '.join(note.hints),
-                        ', '.join(freq_strs)
-                        ])
-    return results
+    # Format: foo (123)
+    freq_strs = ["%s (%d)" % (f[0], f[1]) for f in note.frequencies]
+    return [note.query, '\n\n'.join(note.cloze_texts),
+                    ' | '.join(note.hints),
+                    ', '.join(freq_strs)
+                    ]
 
 
 (options, args) = parser.parse_args()
 
+# Mark the existing notes so that we can continue writing in case of large jobs.
+existing_notes = set()
+
+with open(options.output_file, 'r') as f:
+    reader = csv.reader(f)
+    for row in reader:
+        existing_notes.add(row[0])
+
 with open(options.query_file, 'r') as f:
     queries = f.read().strip().split('\n')
 
-results = []
-bar = progress.bar.Bar('Processing', max=len(queries))
-for q in queries:
-    bar.next()
-    # We need to normalize because of this article:
-    # https://www.ojisanseiuchi.com/2021/05/08/encoding-of-the-cyrillic-letter-%D0%B9-a-utf-8-gotcha/
-    # It doesn't handle the character й well, treating it as и + diacritic in a
-    # lot of cases.
-    # TODO: Move this into some other function.
-    normalized = q.strip().lower().replace(u"\u0438\u0306", u"\u0439")
+def make_notes(queries, existing_notes):
+    """
+    Generator of AnkiReversoNote
+    """
+    bar = progress.bar.Bar('Processing', max=len(queries))
+    for q in queries:
+        bar.next()
+        if q in existing_notes:
+            continue
+        # We need to normalize because of this article:
+        # https://www.ojisanseiuchi.com/2021/05/08/encoding-of-the-cyrillic-letter-%D0%B9-a-utf-8-gotcha/
+        # It doesn't handle the character й well, treating it as и + diacritic in a
+        # lot of cases.
+        # TODO: Move this into some other function.
+        normalized = q.strip().lower().replace(u"\u0438\u0306", u"\u0439")
 
-    api = context.ReversoContextAPI(
-        normalized,
-        "",
-        options.source_lang,
-        options.target_lang)
-    # Rate limit to prevent getting blocked by Reverso.
-    time.sleep(SLEEP_THROTTLE_SEC)
+        api = context.ReversoContextAPI(
+            normalized,
+            "",
+            options.source_lang,
+            options.target_lang)
+        # Rate limit to prevent getting blocked by Reverso.
+        time.sleep(SLEEP_THROTTLE_SEC)
 
-    note = AnkiReversoNote(query=q, hints=[], cloze_texts=[], frequencies=[])
+        note = AnkiReversoNote(query=q, hints=[], cloze_texts=[], frequencies=[])
 
-    num_retries = 0
-    while num_retries < MAX_RETRIES:
-        try:
-            if num_retries == MAX_RETRIES:
-                raise Exception("Hit max number of retries.")
-            translations = islice(api.get_translations(), 0, MAX_FREQUENCIES)
-            examples = islice(api.get_examples(), 0, MAX_EXAMPLES)
-            num_retries += 1
-            break
-        except requests.exceptions.ConnectionError:
-            logger.warning("Encountered a connection error. Retrying...")
-            time.sleep(RETRY_WAIT_SEC)
+        num_retries = 0
+        while num_retries < MAX_RETRIES:
+            try:
+                if num_retries == MAX_RETRIES:
+                    raise Exception("Hit max number of retries.")
+                translations = islice(api.get_translations(), 0, MAX_FREQUENCIES)
+                examples = islice(api.get_examples(), 0, MAX_EXAMPLES)
+                num_retries += 1
+                break
+            except requests.exceptions.ConnectionError:
+                logger.warning("Encountered a connection error. Retrying...")
+                time.sleep(RETRY_WAIT_SEC)
 
-    # Handle frequencies.
-    for translation in translations:
-        note.frequencies.append((translation.translation,
-            translation.frequency))
+        # Handle frequencies.
+        for translation in translations:
+            note.frequencies.append((translation.translation,
+                translation.frequency))
 
-    # Handle examples.
-    for source, target in examples:
-        # Create the cloze part
-        cloze = make_cloze(source.text, source.highlighted)
-        note.cloze_texts.append(cloze)
+        # Handle examples.
+        for source, target in examples:
+            # Create the cloze part
+            cloze = make_cloze(source.text, source.highlighted)
+            note.cloze_texts.append(cloze)
 
-        # Use the english translation in a list of hints. The hint won't be
-        # colocated with the sentence but doesn't really matter.
-        try:
-            note.hints.append(get_highlighted(target.text, target.highlighted))
-        except BaseException:
-            logger.warning('Hint failed on ' + q)
+            # Use the english translation in a list of hints. The hint won't be
+            # colocated with the sentence but doesn't really matter.
+            try:
+                note.hints.append(get_highlighted(target.text, target.highlighted))
+            except BaseException:
+                logger.warning('Hint failed on ' + q)
 
-    # Columns: Term, cloze, hint
-    if len(note.cloze_texts) != 0:
-        results.append(note)
-    else:
-        # Simply skip the word for now, oh well.
-        logger.warning("Nothing found on Reverso: " + q)
+        # Columns: Term, cloze, hint
+        if len(note.cloze_texts) != 0:
+            yield note
+        else:
+            # Simply skip the word for now, oh well.
+            logger.warning("Nothing found on Reverso: " + q)
 
-bar.finish()
+    bar.finish()
 
 
-as_columns = reverso_note_to_csv(results)
-with open(options.output_file, 'w', newline='') as csvfile:
+with open(options.output_file, 'a', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
-    for row in as_columns:
+    for note in make_notes(queries, existing_notes):
+        row = reverso_note_to_csv(note)
         reversowriter.writerow(row)
