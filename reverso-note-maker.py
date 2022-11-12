@@ -14,6 +14,7 @@ from optparse import OptionParser
 from reverso_api import context
 from itertools import islice
 import time
+from collections import namedtuple
 import csv
 import logging
 
@@ -34,7 +35,7 @@ parser.add_option("-t", "--target_lang", dest="target_lang",
                   default="en")
 parser.add_option("-q", "--queries", dest="query_file",
                   help="Path to queries file", default="queries.txt")
-parser.add_option("-o", "--output", dest="output_pfile",
+parser.add_option("-o", "--output", dest="output_file",
                   help="Path to output file", default="reverso.csv")
 
 
@@ -111,7 +112,10 @@ for q in queries:
 
     note = AnkiReversoNote(query=q, hints=[], cloze_texts=[], frequencies=[])
 
-# Handle frequencies.
+    # Handle frequencies.
+    for translation in islice(api.get_translations(), 0, MAX_FREQUENCIES):
+        note.frequencies.append((translation.translation,
+            translation.frequency))
 
     # Handle examples.
     for source, target in islice(api.get_examples(), 0, MAX_EXAMPLES):
@@ -127,7 +131,7 @@ for q in queries:
             logger.warning('Hint failed on ' + q)
 
     # Columns: Term, cloze, hint
-    if len(clozes) != 0:
+    if len(note.cloze_texts) != 0:
         results.append(note)
     else:
         # Simply skip the word for now, oh well.
@@ -135,7 +139,7 @@ for q in queries:
 
 
 as_columns = reverso_note_to_csv(results)
-with open(options.output, 'w', newline='') as csvfile:
+with open(options.output_file, 'w', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
     for row in as_columns:
         reversowriter.writerow(row)
