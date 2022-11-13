@@ -13,6 +13,7 @@ Example usage:
 from optparse import OptionParser
 from reverso_api import context
 from itertools import islice
+import os
 import time
 import progress.bar
 import requests.exceptions
@@ -28,6 +29,11 @@ MAX_EXAMPLES = 3
 
 # Maximum number of frequencies ("translations" in library) to fetch.
 MAX_FREQUENCIES = 5
+# Reverso can start giving really weird frequencies. This cuts out any
+# frequencies relative to n * the highest frequency word. For example, if it's
+# 0.1, you can think that this means that any translation appearing < 10%
+# relative to the most common translation can be ignored.
+FREQUENCY_THRESHOLD = 0.1
 
 MAX_RETRIES = 5
 
@@ -84,11 +90,20 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
     """
     Processes AnkiReversoNotes into a row of a CSV.
     """
-    # Format: foo (123)
-    freq_strs = ["%s (%d)" % (f[0], f[1]) for f in note.frequencies]
+    # Format: foo (0.5) where the number is the relative frequency to the most
+    # common word. However, don't put any number next to the first word.
+    freq_strs = []
+    for i, f in enumerate(note.frequencies):
+        if i == 0:
+            freq_strs.append("<b>%s</b></br>" % f[0])
+        else:
+            highest_freq = note.frequencies[0][1]
+            freq_strs.append("%s (%.2f)" % (f[0], f[1] / highest_freq))
+
     return [note.query, '\n\n'.join(note.cloze_texts),
                     ' | '.join(note.hints),
-                    ', '.join(freq_strs)
+                    # First one gets its own line, so no semicolon after it.
+                    freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
                     ]
 
 
@@ -97,10 +112,11 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
 # Mark the existing notes so that we can continue writing in case of large jobs.
 existing_notes = set()
 
-with open(options.output_file, 'r') as f:
-    reader = csv.reader(f)
-    for row in reader:
-        existing_notes.add(row[0])
+if os.path.isfile(options.output_file):
+    with open(options.output_file, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            existing_notes.add(row[0])
 
 with open(options.query_file, 'r') as f:
     queries = f.read().strip().split('\n')
@@ -145,9 +161,12 @@ def make_notes(queries, existing_notes):
                 time.sleep(RETRY_WAIT_SEC)
 
         # Handle frequencies.
-        for translation in translations:
-            note.frequencies.append((translation.translation,
-                translation.frequency))
+        highest_freq = None
+        for i, translation in enumerate(translations):
+            if i == 0:
+                highest_freq = translation.frequency
+            if translation.frequency > highest_freq * FREQUENCY_THRESHOLD:
+                note.frequencies.append((translation.translation, translation.frequency))
 
         # Handle examples.
         for source, target in examples:
