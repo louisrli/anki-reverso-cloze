@@ -9,7 +9,8 @@ notes with three columns:
 
 1. Term
 2. Example sentences from Reverso, with cloze
-3. Hint (the translation of Term)
+3. Reverso's translation of the definition in the example sentences
+4. Top N frequencies of definitions (e.g., a word can have different meanings)
 
 This README assumes basic background knowledge of Anki cards and does not
 explain any of the related terminology.
@@ -17,16 +18,18 @@ explain any of the related terminology.
 ## Examples
 
 Here is an example of a line from the raw CSV created by the script, pulling
-three example sentences for the Russian word `толще` with the target term
-contained in a cloze:
+three example sentences for the Italian phrase `a memoria` with the target term
+contained in a cloze. It also has relative ratios for the frequency of
+translations. For example, this term is most commonly translated to "by heart",
+but it can also be translated to "from memory" (with a relative 0.27 frequency
+to "by heart").
 
 ```
-толще,"Нужно нарезать груши {{c1::толще}} чем яблоки, потому что они готовятся быстрее.
+a memoria,"Studialo bene ed imparalo {{c1::a memoria}}.
 
-Благодаря действию активных компонентов ресницы становятся длиннее, {{c1::толще}} и выглядят объемнее.
+È fuori questione imparare tutte queste frasi {{c1::a memoria}}.
 
-Можешь взять кого-нибудь и сделать немножко {{c1::толще}} и ниже
-ростом.",thicker | thicker | fatter
+Cantatelo {{c1::a memoria}}, o leggendolo.",by heart | by heart | from memory,<b>by heart</b></br>from memory (0.27); in memory (0.12)
 ```
 
 After creating a note type and importing the CSV, you'll get cards that have the
@@ -45,16 +48,21 @@ Install the prerequisites:
 ```
 pip3 install progress
 ```
+
 ### Steps
 1. Create a file called `queries.txt` with one term per line.
-2. Run `python reverso-note-maker.py -s it` where `ru` (Italian) can be replaced
-   by the two letter code. Wait for it to finish.
+2. Run `python reverso-note-maker.py -s it` where `it` (Italian) can be replaced
+   by the two letter language code. Wait for it to finish.
 3. Import the created file `reverso.csv` into the Anki desktop app, with the
    columns matching in the order shown below. You will have to create a new note
    type.
 
-Note: due to rate limiting, the script sleeps for 1 second between each word to
-prevent flooding the Reverso API.
-
 ![Example of importing](assets/import.png)
+
+### Potential issues
+* **Sleeping**: If your computer goes to sleep, you'll need to restart the
+    script, but it'll pick up from where you left off.
+* **Rate-limiting**: Reverso may block or throttle you. The script waits one
+    second between requests and has a retry mechanism, but if it happens, run
+    the script again.
 
