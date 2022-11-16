@@ -10,6 +10,7 @@ Example usage:
 
     python3 reverso_note_maker.py -s ru
 """
+from typing import Generator
 from optparse import OptionParser
 from reverso_api import context
 from itertools import islice
@@ -20,12 +21,19 @@ import requests.exceptions
 from collections import namedtuple
 import csv
 import logging
+from api_helpers import get_highlighted, make_cloze 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Maximum number of examples to pull from Reverso.
 MAX_EXAMPLES = 3
+
+# Number of examples to ask for when using prefer_short option. As the API
+# provides a generator, we ask for a reasonable amount by eyeballing the UI.
+# Unfortunately, there's no easy way to ask for "just one page" using the API
+# library, but this should add a ceiling to the request time.
+PREFER_SHORT_MAX_EXAMPLES = 15
 
 # Maximum number of frequencies ("translations" in library) to fetch.
 MAX_FREQUENCIES = 5
@@ -51,31 +59,8 @@ parser.add_option("-q", "--queries", dest="query_file",
                   help="Path to queries file", default="queries.txt")
 parser.add_option("-o", "--output", dest="output_file",
                   help="Path to output file", default="reverso.csv")
-parser.add_option("--prefer-short", dest="prefer_short",
+parser.add_option("--prefer-short", action="store_true", dest="prefer_short",
                   help="Sort example sentences by length, preferring shorter sentences", default=False)
-
-
-def get_highlighted(text, highlighted):
-    """
-    Given `highlighted`, which is a list of pair of indexes, return the first
-    highlighted string in the Reverso sentence
-    """
-    start = highlighted[0][0]
-    end = highlighted[0][1]
-    return text[start:end]
-
-
-def make_cloze(text, highlighted):
-    """
-    Takes the a string and a pair of numbers and clozes the parts of the string
-    between the given indices.
-    """
-    start = highlighted[0][0]
-    end = highlighted[0][1]
-    prefix = text[:start]
-    highlighted = text[start:end]
-    suffix = text[end:]
-    return "%s{{c1::%s}}%s" % (prefix, highlighted, suffix)
 
 
 # frequencies is a (definition, count) pair that shows up at the top of the
@@ -90,7 +75,9 @@ AnkiReversoNote = namedtuple(
 
 def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
     """
-    Processes AnkiReversoNotes into a row of a CSV.
+    Processes an AnkiReversoNote into a single row of CSV output.
+
+    See the README for an example of what this output would look like.
     """
     # Format: foo (0.5) where the number is the relative frequency to the most
     # common word. However, don't put any number next to the first word.
@@ -108,9 +95,10 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
                     freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
                     ]
 
-def make_notes(queries, existing_notes, options):
+def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
+        None, None]:
     """
-    Generator of AnkiReversoNote
+    Main function for generating notes
     """
     bar = progress.bar.Bar('Processing', max=len(queries))
     for q in queries:
@@ -140,7 +128,15 @@ def make_notes(queries, existing_notes, options):
                 if num_retries == MAX_RETRIES:
                     raise Exception("Hit max number of retries.")
                 translations = islice(api.get_translations(), 0, MAX_FREQUENCIES)
-                examples = islice(api.get_examples(), 0, MAX_EXAMPLES)
+                if options.prefer_short:
+                    # Sort by the length of the sort text.
+                    examples  = list(islice(api.get_examples(),
+                            0,
+                            PREFER_SHORT_MAX_EXAMPLES))
+                    examples.sort(key=lambda s: len(s[0].text))
+                    examples = examples[:MAX_EXAMPLES]
+                else:
+                    examples = islice(api.get_examples(), 0, MAX_EXAMPLES)
                 num_retries += 1
                 break
             except requests.exceptions.ConnectionError:
@@ -195,6 +191,8 @@ with open(options.query_file, 'r') as f:
 
 with open(options.output_file, 'a', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
+    # Write from the generator as we receive results so that progress can be
+    # saved.
     for note in make_notes(queries, existing_notes, options):
         row = reverso_note_to_csv(note)
         reversowriter.writerow(row)
