@@ -85,4 +85,6 @@ python3 reverso_note_maker.py --help
 * **Rate-limiting**: Reverso may block or throttle you. The script waits one
     second between requests and has a retry mechanism, but if it happens, run
     the script again.
-
+* **Bad translations**: Reverso isn't always perfect, so sometimes the
+    translations will be weird. This is will happen frequently with less common
+    terms.
