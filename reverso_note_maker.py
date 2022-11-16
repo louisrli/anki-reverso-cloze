@@ -21,7 +21,7 @@ import requests.exceptions
 from collections import namedtuple
 import csv
 import logging
-from api_helpers import get_highlighted, make_cloze 
+from api_helpers import get_highlighted, make_cloze
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -59,8 +59,12 @@ parser.add_option("-q", "--queries", dest="query_file",
                   help="Path to queries file", default="queries.txt")
 parser.add_option("-o", "--output", dest="output_file",
                   help="Path to output file", default="reverso.csv")
-parser.add_option("--prefer-short", action="store_true", dest="prefer_short",
-                  help="Sort example sentences by length, preferring shorter sentences", default=False)
+parser.add_option(
+    "--prefer-short",
+    action="store_true",
+    dest="prefer_short",
+    help="Sort example sentences by length, preferring shorter sentences",
+    default=False)
 
 
 # frequencies is a (definition, count) pair that shows up at the top of the
@@ -90,13 +94,14 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
             freq_strs.append("%s (%.2f)" % (f[0], f[1] / highest_freq))
 
     return [note.query, '\n\n'.join(note.cloze_texts),
-                    ' | '.join(note.hints),
-                    # First one gets its own line, so no semicolon after it.
-                    freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
-                    ]
+            ' | '.join(note.hints),
+            # First one gets its own line, so no semicolon after it.
+            freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
+            ]
+
 
 def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
-        None, None]:
+                                                              None, None]:
     """
     Main function for generating notes
     """
@@ -120,19 +125,24 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
         # Rate limit to prevent getting blocked by Reverso.
         time.sleep(SLEEP_THROTTLE_SEC)
 
-        note = AnkiReversoNote(query=q, hints=[], cloze_texts=[], frequencies=[])
+        note = AnkiReversoNote(
+            query=q,
+            hints=[],
+            cloze_texts=[],
+            frequencies=[])
 
         num_retries = 0
         while num_retries < MAX_RETRIES:
             try:
                 if num_retries == MAX_RETRIES:
                     raise Exception("Hit max number of retries.")
-                translations = islice(api.get_translations(), 0, MAX_FREQUENCIES)
+                translations = islice(
+                    api.get_translations(), 0, MAX_FREQUENCIES)
                 if options.prefer_short:
                     # Sort by the length of the sort text.
-                    examples  = list(islice(api.get_examples(),
-                            0,
-                            PREFER_SHORT_MAX_EXAMPLES))
+                    examples = list(islice(api.get_examples(),
+                                           0,
+                                           PREFER_SHORT_MAX_EXAMPLES))
                     examples.sort(key=lambda s: len(s[0].text))
                     examples = examples[:MAX_EXAMPLES]
                 else:
@@ -149,7 +159,8 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
             if i == 0:
                 highest_freq = translation.frequency
             if translation.frequency > highest_freq * FREQUENCY_THRESHOLD:
-                note.frequencies.append((translation.translation, translation.frequency))
+                note.frequencies.append(
+                    (translation.translation, translation.frequency))
 
         # Handle examples.
         for source, target in examples:
@@ -160,7 +171,10 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
             # Use the english translation in a list of hints. The hint won't be
             # colocated with the sentence but doesn't really matter.
             try:
-                note.hints.append(get_highlighted(target.text, target.highlighted))
+                note.hints.append(
+                    get_highlighted(
+                        target.text,
+                        target.highlighted))
             except BaseException:
                 logger.warning('Hint failed on ' + q)
 
@@ -178,7 +192,8 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
 if not options.source_lang:
     parser.error('No source language given.')
 
-# Mark the existing notes so that we can continue writing in case of large jobs.
+# Mark the existing notes so that we can continue writing in case of large
+# jobs.
 existing_notes = set()
 
 if os.path.isfile(options.output_file):
