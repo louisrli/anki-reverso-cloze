@@ -190,7 +190,6 @@ if os.path.isfile(options.output_file):
 with open(options.query_file, 'r') as f:
     queries = f.read().strip().split('\n')
 
-
 with open(options.output_file, 'a', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
     # Write from the generator as we receive results so that progress can be
