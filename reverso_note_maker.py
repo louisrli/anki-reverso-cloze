@@ -8,7 +8,7 @@ and should be used to generate notes from scratch.
 
 Example usage:
 
-    python3 reverso-note-maker.py -s ru
+    python3 reverso_note_maker.py -s ru
 """
 from optparse import OptionParser
 from reverso_api import context

@@ -51,8 +51,8 @@ pip3 install progress
 
 ### Steps
 1. Create a file called `queries.txt` with one term per line.
-2. Run `python reverso-note-maker.py -s it` where `it` (Italian) can be replaced
-   by the two letter language code. Wait for it to finish.
+2. Run `python3 reverso_note_maker.py -s it` where `it` (Italian) can be
+   replaced by the two letter language code. Wait for it to finish.
 3. Import the created file `reverso.csv` into the Anki desktop app, with the
    columns matching in the order shown below. You will have to create a new note
    type.
