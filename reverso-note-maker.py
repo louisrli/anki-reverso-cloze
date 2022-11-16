@@ -51,6 +51,8 @@ parser.add_option("-q", "--queries", dest="query_file",
                   help="Path to queries file", default="queries.txt")
 parser.add_option("-o", "--output", dest="output_file",
                   help="Path to output file", default="reverso.csv")
+parser.add_option("--prefer-short", dest="prefer_short",
+                  help="Sort example sentences by length, preferring shorter sentences", default=False)
 
 
 def get_highlighted(text, highlighted):
@@ -106,22 +108,7 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
                     freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
                     ]
 
-
-(options, args) = parser.parse_args()
-
-# Mark the existing notes so that we can continue writing in case of large jobs.
-existing_notes = set()
-
-if os.path.isfile(options.output_file):
-    with open(options.output_file, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            existing_notes.add(row[0])
-
-with open(options.query_file, 'r') as f:
-    queries = f.read().strip().split('\n')
-
-def make_notes(queries, existing_notes):
+def make_notes(queries, existing_notes, options):
     """
     Generator of AnkiReversoNote
     """
@@ -191,8 +178,23 @@ def make_notes(queries, existing_notes):
     bar.finish()
 
 
+(options, args) = parser.parse_args()
+
+# Mark the existing notes so that we can continue writing in case of large jobs.
+existing_notes = set()
+
+if os.path.isfile(options.output_file):
+    with open(options.output_file, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            existing_notes.add(row[0])
+
+with open(options.query_file, 'r') as f:
+    queries = f.read().strip().split('\n')
+
+
 with open(options.output_file, 'a', newline='') as csvfile:
     reversowriter = csv.writer(csvfile)
-    for note in make_notes(queries, existing_notes):
+    for note in make_notes(queries, existing_notes, options):
         row = reverso_note_to_csv(note)
         reversowriter.writerow(row)
