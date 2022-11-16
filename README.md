@@ -12,12 +12,17 @@ notes with three columns:
 3. Reverso's translation of the definition in the example sentences
 4. Top N frequencies of definitions (e.g., a word can have different meanings)
 
+It can easily be combined with
+[AwesomeTTS](https://github.com/AwesomeTTS/awesometts-anki-addon) or
+[FawsImageSearch](https://github.com/louisrli/anki-faws-image-search) to
+generate cards with audio and images.
+
 This README assumes basic background knowledge of Anki cards and does not
 explain any of the related terminology.
 
 ## Examples
 
-The script creates a CSV that can be imported into Anki. If you're interested in
+The script creates a file `reverso.csv` that can be imported into Anki. If you're interested in
 exactly what's generated, you can look in the spoiler below. Otherwise, continue
 reading.
 
@@ -38,7 +43,7 @@ Cantatelo {{c1::a memoria}}, o leggendolo.",by heart | by heart | from memory,<b
 ```
 </details>
 
-After creating a note type and importing the CSV, you'll get cards that have the
+After creating a note type and importing the CSV, you'll have cloze cards that have the
 following respective front and back sides:
 
 ### Front
@@ -48,7 +53,8 @@ following respective front and back sides:
 ![Back of card](assets/back.png)
 
 ## Usage
-Using this assumes some basic knowledge of coding.
+Using this assumes basic knowledge of how to run programs on the command line.
+Coding is not required.
 
 Install the prerequisites: 
 ```
@@ -56,7 +62,7 @@ pip3 install progress
 ```
 
 ### Steps
-1. Create a file called `queries.txt` with one term per line.
+1. Create a file called `queries.txt` with one Reverso search term per line.
 2. Run `python3 reverso_note_maker.py -s it` where `it` (Italian) can be
    replaced by the two letter language code. Wait for it to finish.
 3. Import the created file `reverso.csv` into the Anki desktop app, with the
