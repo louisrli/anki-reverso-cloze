@@ -59,6 +59,11 @@ pip3 install progress
 
 ![Example of importing](assets/import.png)
 
+To see the full list of options:
+```
+python3 reverso_note_maker.py --help
+```
+
 ### Potential issues
 * **Sleeping**: If your computer goes to sleep, you'll need to restart the
     script, but it'll pick up from where you left off.

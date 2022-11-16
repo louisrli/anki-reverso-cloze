@@ -175,6 +175,8 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
 
 
 (options, args) = parser.parse_args()
+if not options.source_lang:
+    parser.error('No source language given.')
 
 # Mark the existing notes so that we can continue writing in case of large jobs.
 existing_notes = set()
