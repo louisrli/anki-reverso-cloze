@@ -17,6 +17,11 @@ explain any of the related terminology.
 
 ## Examples
 
+The script creates a CSV that can be imported into Anki. If you're interested in
+exactly what's generated, you can look in the spoiler below. Otherwise, continue
+reading.
+
+<details>
 Here is an example of a line from the raw CSV created by the script, pulling
 three example sentences for the Italian phrase `a memoria` with the target term
 contained in a cloze. It also has relative ratios for the frequency of
@@ -31,6 +36,7 @@ a memoria,"Studialo bene ed imparalo {{c1::a memoria}}.
 
 Cantatelo {{c1::a memoria}}, o leggendolo.",by heart | by heart | from memory,<b>by heart</b></br>from memory (0.27); in memory (0.12)
 ```
+</details>
 
 After creating a note type and importing the CSV, you'll get cards that have the
 following respective front and back sides:
