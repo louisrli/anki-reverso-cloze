@@ -14,6 +14,7 @@ from typing import Generator
 from optparse import OptionParser
 from reverso_api import context
 from itertools import islice
+import formatting
 import os
 import time
 import progress.bar
@@ -66,6 +67,13 @@ parser.add_option(
     help="Sort example sentences by length, preferring shorter sentences",
     default=False)
 
+parser.add_option(
+    "--keep-punctuation",
+    action="store_true",
+    dest="keep_punctuation",
+    help="By default, script removes non-apostrophe punctuation because it Reverso matches the punctuation and it usually leads to bad examples. This flag keeps all punctuation",
+    default=False)
+
 
 # frequencies is a (definition, count) pair that shows up at the top of the
 # Reverso UI, indicating what the most frequent translation is
@@ -116,6 +124,8 @@ def make_notes(queries, existing_notes, options) -> Generator[AnkiReversoNote,
         # lot of cases.
         # TODO: Move this into some other function.
         normalized = q.strip().lower().replace(u"\u0438\u0306", u"\u0439")
+        if not options.keep_punctuation:
+            normalized = formatting.strip_punctuation(normalized)
 
         api = context.ReversoContextAPI(
             normalized,
