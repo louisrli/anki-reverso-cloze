@@ -14,7 +14,7 @@ def get_highlighted(text, highlighted):
 
 def make_cloze(text, highlighted):
     """
-    Takes the a string and a pair of numbers and clozes the parts of the string
+    Takes a string and a pair of numbers and clozes the parts of the string
     between the given indices.
     """
     start = highlighted[0][0]
@@ -23,6 +23,3 @@ def make_cloze(text, highlighted):
     highlighted = text[start:end]
     suffix = text[end:]
     return "%s{{c1::%s}}%s" % (prefix, highlighted, suffix)
-
-
-

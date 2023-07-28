@@ -101,7 +101,7 @@ def reverso_note_to_csv(note: AnkiReversoNote) -> list[str]:
             highest_freq = note.frequencies[0][1]
             freq_strs.append("%s (%.2f)" % (f[0], f[1] / highest_freq))
 
-    return [note.query, '\n\n'.join(note.cloze_texts),
+    return [note.query, '<br/><br/>'.join(note.cloze_texts),
             ' | '.join(note.hints),
             # First one gets its own line, so no semicolon after it.
             freq_strs[0] + '; '.join(freq_strs[1:]) if freq_strs else ''
