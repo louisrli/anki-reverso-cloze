@@ -51,7 +51,7 @@ SLEEP_THROTTLE_SEC = 1
 RETRY_WAIT_SEC = 60
 
 parser = OptionParser()
-parser.add_option("-s", "--sourcelang", dest="source_lang",
+parser.add_option("-s", "--source_lang", dest="source_lang",
                   help="Source language code of words to read.")
 parser.add_option("-t", "--target_lang", dest="target_lang",
                   help="Target language code.",
